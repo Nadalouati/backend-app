@@ -1,0 +1,10 @@
+Client :
+
+1 :
+
+A - SignUp :
+	* Get The Data From The Frontend (Req) and Create New User  with the user mongoose module then  return msg (success/failed)
+
+B - Login :
+	* Get The Email + Password -> Check If Exist -> return success + JWT | failed 
+	* Tools : JWT
