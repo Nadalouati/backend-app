@@ -1,8 +1,13 @@
 // UserRoutes.js
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-const User = require("../models/UserSchema");
+const UserSchema = require("../models/UserSchema");
+
+const mongoose = require("mongoose");
+const User = mongoose.model("Users",UserSchema)
 
 // Signup endpoint
 router.post('/signup', async (req, res) => {
@@ -59,6 +64,80 @@ router.post('/login', async (req, res) => {
           res.status(500).json({ message: 'Internal server error' });
         }
       });
+
+
+// User update himself
+
+router.put('/update-user/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const {  actions, notifications, ...restOfUpdates } = req.body;
+
+    
+      // hne bch tzid bl jwt enk taaml verif ken jwt id te3 user hiya nafshha id te3 el rebody wa9tha tkhdm snn lee not auth
+
+      if (actions !== undefined || notifications !== undefined) {
+          return res.status(400).json({ message: 'Cannot update actions or notifications directly.' });
+      }
+
+      const user = await User.findByIdAndUpdate(id, restOfUpdates);
+
+      if (!user) {
+          return res.status(404).json({ message: `Cannot find any user with ID ${id}` });
+      }
+
+      
+      res.status(200).json({...user,...restOfUpdates});
+
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint to get ratingStars
+router.get('/get-rating/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const user = await User.findById(id);
+
+      if (!user) {
+          return res.status(404).json({ message: `Cannot find any user with ID ${id}` });
+      }
+
+      const ratingStars = user.ratingStars;
+      res.status(200).json({ ratingStars });
+
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
+// Endpoint to update ratingStars
+router.put('/update-rating/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const { ratingStars } = req.body;
+
+      if (id !== id) {
+          return res.status(403).json({ message: 'You are not authorized to update this user.' });
+      }
+
+      if (ratingStars < 0 || ratingStars > 5) {
+          return res.status(400).json({ message: 'RatingStars must be between 0 and 5.' });
+      }
+
+      const user = await User.findByIdAndUpdate(id, { ratingStars }, { new: true });
+
+      if (!user) {
+          return res.status(404).json({ message: `Cannot find any user with ID ${id}` });
+      }
+
+      res.status(200).json({ ratingStars: user.ratingStars });
+
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
 
 
 module.exports = router;

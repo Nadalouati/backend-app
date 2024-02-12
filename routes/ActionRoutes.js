@@ -2,10 +2,14 @@
 const express = require('express');
 const router = express.Router();
 
-const Action = require("../models/ActionSchema");
-const User = require("../models/UserSchema");
+const ActionSchema = require("../models/ActionSchema");
+const UserSchema = require("../models/UserSchema");
 
-// Create an action by user
+const mongoose = require("mongoose");
+const User = mongoose.model("Users",UserSchema)
+
+const Action = mongoose.model("Actions",ActionSchema)
+// Create an action by user(ma habtch tasti)
 router.post('/user/create-action', async (req, res) => {
    
         try {
@@ -43,60 +47,83 @@ router.get('/all-actions', async (req, res) => {
       
 });
 
-// Get action by ID
-router.get('/action/:id', async (req, res) => {
+// Get action by ID (badelna fiha )
+router.get('/get-actions/:id', async (req, res) => {
     
-        try{
-          const{id} = req.params;
-      
-          const ActionById = await Action.findById(id);
-          res.status(200).json(ActionById);
-      
-        } catch(error){
-      
-          res.status(500).json ({message: error.message})
-      
-        }
-      
+          try {
+            const {id} = req.params;
+
+            const actionsByUserId = await Action.find({ userId : id });
+
+                res.status(200).json(actionsByUserId);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+              
 });
 
-// Update action
+// Update action(badelnaha )
 router.put('/update-action/:id', async (req, res) => {
-    
-        try{
-          const{id} = req.params;
-          const action = await Action.findByIdAndUpdate(id, req.body);
-          // we cannot find any action in db
-          if(!action){
-            return res.status(404).json({message: `cannot find any action with ID ${id}`})
-          }
-      
-          //afficher les actions apres la modofication
-          const updatedaction = await Action.findById(id);
-          res.status(200).json(updatedaction);
-      
-        }catch(error){
-          res.status(500).json ({message: error.message})
-        }
-      });
+  try {
+      const { id } = req.params;
+      const action = await Action.findById(id);
+
+      if (!action) {
+          return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
+      }
+
+      const docCreatedTimeString = action.create_time;
+      const docCreatedTime = new Date(docCreatedTimeString);
+      const currentTime  = Date.now();
+      const timeDifference = currentTime - docCreatedTime.getTime();
+      const twoHoursInMilliseconds = 2 * 60 * 60 * 1000;
+  
+      if (timeDifference < twoHoursInMilliseconds) {
+
+          const updatedAction = await Action.findByIdAndUpdate(id, req.body, { new: true });
+          res.status(200).json(updatedAction);
+
+      } else {
+          
+          res.status(400).json({ message: 'Cannot update action after 2 hours of creation.' });
+      }
+
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
+module.exports = router;
       
 
-// Delete action
-router.delete('/action/:id', async (req, res) => {
-        try{
-      
-          const{id} = req.params;
-          const action = await Action.findByIdAndDelete(id);
-          if(!action){
-            return res.status(404).json({message: `cannot find any action with ID ${id}`})
-          }
-          res.status(200).json(action);
-      
-        }catch(error){
-          res.status(500).json ({message: error.message})
-        }
-      
-      
+// Delete action(badelnaha )
+router.delete('/delete-action/:id', async (req, res) => {
+  try {
+      const { id } = req.params;
+      const action = await Action.findById(id);
+
+      if (!action) {
+          return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
+      }
+
+      const create_time = action.create_time; 
+
+      const Now_time = new Date();
+      const timeDifference = Now_time - create_time; 
+
+        //const twoHours = 2 * 60 * 60 * 1000 ; 
+        //timeDifference <= twoHours
+      if (true) {
+          
+          const deletedAction = await Action.findByIdAndDelete(id);
+          res.status(200).json(deletedAction);
+      } else {
+          
+          res.status(403).json({ message: 'Cannot delete action after 2 hours of creation.' });
+      }
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
 });
 
 module.exports = router;

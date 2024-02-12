@@ -10,4 +10,4 @@ const ActionSchema = new mongoose.Schema({
     declined_time: { type: Date, default: null }
 });
 
-module.exports =ActionSchema;
+module.exports = ActionSchema;

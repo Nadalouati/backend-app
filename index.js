@@ -21,6 +21,7 @@ app.use('/action', actionRoutes);
 
  // Start the server
  app.listen(PORT, async () => {
+    console.log("server is runing on"+PORT)
     await mongoose.connect('mongodb+srv://wassali:wassali123"@wassali.zbc9jzr.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true , dbName :"wassali" });
 });
  
