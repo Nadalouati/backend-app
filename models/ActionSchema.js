@@ -7,7 +7,9 @@ const ActionSchema = new mongoose.Schema({
     create_time: { type: Date, default: Date.now },
     responded_time: { type: Date, default: null },
     confirmed_time: { type: Date, default: null },
-    declined_time: { type: Date, default: null }
+    declined_time: { type: Date, default: null },
+    currentPriceByAdmin: { type: Number }, 
+    dateByAdmin: { type: Date }
 });
 
 module.exports = ActionSchema;

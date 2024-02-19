@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+
+
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -11,12 +13,14 @@ const PORT = process.env.PORT || 5000;
 
 const userRoutes = require('./routes/UserRoutes');
 const actionRoutes = require('./routes/ActionRoutes');
+const adminRoutes = require('./routes/AdminRoutes');
 
 
 app.use(bodyParser.json());
 
 app.use('/user', userRoutes); 
 app.use('/action', actionRoutes); 
+app.use('/admin', adminRoutes);
 
 
  // Start the server
@@ -25,3 +29,12 @@ app.use('/action', actionRoutes);
     await mongoose.connect('mongodb+srv://wassali:wassali123"@wassali.zbc9jzr.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true , dbName :"wassali" });
 });
  
+
+
+
+
+
+
+
+
+
