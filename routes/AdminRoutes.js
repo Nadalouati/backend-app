@@ -8,7 +8,7 @@ const Actionn = require('../models/ActionSchema');
 const Livreurr = require('../models/LivreurSchema'); 
 
 const mongoose = require("mongoose");
-const Livreur = mongoose.model("Livreurs",Livreurr);
+const Livreur = mongoose.model("Livreur",Livreurr);
 const Action = mongoose.model("Action",Actionn);
 const User = mongoose.model("User",Userr);
 
@@ -79,12 +79,62 @@ router.post('/adminResponse', async (req, res) => {
     }
   });
 
-module.exports = router;
+
 
 
 
 
   
+  // Get all Livreurs
+router.get('/all-Livreur', async (req, res) => {
+    
+    try{
+  
+      const allLivreur = await Livreur.find({});
+      console.log(allLivreur);
+      res.status(200).json(allLivreur);
+  
+    }catch(error){
+  
+      res.status(500).json ({message: error.message})
+  
+    }
+  
+});
+
+
+
+
+
+
+
+// Associate an action to a Livreur
+router.put('/associateActionToLivreur/:livreurId/:actionId', async (req, res) => {
+  try {
+    const livreurId = req.params.livreurId;
+    const actionId = req.params.actionId;
+
+    // Fetch the Livreur and Action by their IDs
+    const livreur = await Livreur.findById(livreurId);
+    const action = await Action.findById(actionId);
+
+    if (!livreur || !action) {
+      return res.status(404).json({ message: 'Livreur or Action not found' });
+    }
+
+    if(!action?.confirmed_time) {
+        return res.status(404).json({ message: 'Action Not Confirmed Yet' });
+    }
+
+    // Save the updated Livreur
+    await Action.findOneAndUpdate({_id : actionId},{associatedToLiv : livreurId})
+
+    res.status(200).json({ message: 'Action associated to Livreur successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
 
@@ -93,8 +143,7 @@ module.exports = router;
 
 
 
+module.exports = router;
+  
 
-
-
-
-
+ 

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const ActionSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, 
+    associatedToLiv: { type: mongoose.Schema.Types.ObjectId, ref: 'Livreur' },
     type: { type: String, enum: ['demenagement', 'livraison'] }, 
     state: { type: String, default: 'waiting' }, 
     create_time: { type: Date, default: Date.now },

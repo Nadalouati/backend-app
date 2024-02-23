@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 5000;
 const userRoutes = require('./routes/UserRoutes');
 const actionRoutes = require('./routes/ActionRoutes');
 const adminRoutes = require('./routes/AdminRoutes');
+const livreurRoutes =require('./routes/LivreurRoutes');
 
 
 app.use(bodyParser.json());
@@ -21,6 +22,7 @@ app.use(bodyParser.json());
 app.use('/user', userRoutes); 
 app.use('/action', actionRoutes); 
 app.use('/admin', adminRoutes);
+app.use('/livreur', livreurRoutes);
 
 
  // Start the server

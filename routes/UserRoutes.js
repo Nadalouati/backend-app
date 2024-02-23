@@ -3,12 +3,14 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+const AdminSchema = require("../models/AdminSchema");
 const UserSchema = require("../models/UserSchema");
+const ActionSchema = require('../models/ActionSchema');
 
 const mongoose = require("mongoose");
 const User = mongoose.model("Users",UserSchema)
-
+const Admin = mongoose.model("Admin",AdminSchema);
+const Action = mongoose.model("Action" , ActionSchema)
 // Signup endpoint
 router.post('/signup', async (req, res) => {
   
@@ -140,4 +142,47 @@ router.put('/update-rating/:id', async (req, res) => {
 });
 
 
+// Confirm or Decline the admin's price and date
+router.put('/confirmOrDeclineAction/:actionId', async (req, res) => {
+  try {
+    const actionId = req.params.actionId;
+    const { confirmation } = req.body;
+
+    // Fetch the Action by ID
+    const action = await Action.findById(actionId);
+
+    if (!action) {
+      return res.status(404).json({ message: 'Action not found' });
+    }
+
+
+    // Update the action based on user confirmation
+    if (confirmation == true) {
+      action.state = 'confirmed';
+      action.confirmed_time = new Date();
+    } else {
+      action.state = 'declined';
+      action.declined_time =  new Date();
+    }
+
+    // Save the updated action
+    await action.save();
+    
+    await Admin.findOneAndUpdate({},{
+      $push : {notifications : {title : "user confirmation" , actionId , confirmation , actioState : action.state}}
+    });
+
+    res.status(200).json({ message: 'Action updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 module.exports = router;
+
+
+
+
+

@@ -28,7 +28,7 @@ router.post('/user/create-action', async (req, res) => {
         } catch (error) {
             res.json({error : "500 server error"})
         }   
-    });
+});
 
 
 // Get all actions(yest79ha l'admin)
