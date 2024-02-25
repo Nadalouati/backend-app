@@ -60,7 +60,6 @@ router.get('/checkActions/:livreurId', async (req, res) => {
 });
 
 
-
 // Update Livreur's profile
 router.put('/updateProfile/:livreurId', async (req, res) => {
   try {

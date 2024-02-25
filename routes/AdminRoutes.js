@@ -3,31 +3,46 @@ const express = require('express');
 const router = express.Router();
 const dotenv = require('dotenv');// Load environment variables from .env
 
+const bcrypt = require('bcrypt'); 
 const Userr = require('../models/UserSchema'); 
 const Actionn = require('../models/ActionSchema'); 
 const Livreurr = require('../models/LivreurSchema'); 
+const AdminSchema = require('../models/AdminSchema');
+const E = require('../models/EntrepriseSchema');
 
 const mongoose = require("mongoose");
+
 const Livreur = mongoose.model("Livreur",Livreurr);
 const Action = mongoose.model("Action",Actionn);
 const User = mongoose.model("User",Userr);
-
-
-
-
+const Entreprise = mongoose.model("Entreprise",E);
+const Admin = mongoose.model("Admin",AdminSchema);
 
 dotenv.config(); 
 
 // Admin login route
-router.post('/login', (req, res) => {
-  const { key } = req.body;
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  try {
+    const admin = await Admin.findOne({ email });
 
-  if (key === process.env.ADMIN_KEY) {
-    
-    res.status(200).json({ message: 'Admin login successful' });
-  } else {
-    
-    res.status(401).json({ message: 'Unauthorized' });
+    if (!admin) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // const passwordMatch = await bcrypt.compare(password, admin.password);
+
+    if (password == admin.password) {
+      // Passwords match, login successful
+      res.status(200).json({ message: 'Admin login successful' });
+    } else {
+      // Passwords don't match
+      res.status(401).json({ message: 'Unauthorized' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
@@ -79,12 +94,7 @@ router.post('/adminResponse', async (req, res) => {
     }
   });
 
-
-
-
-
-
-  
+ 
   // Get all Livreurs
 router.get('/all-Livreur', async (req, res) => {
     
@@ -101,11 +111,6 @@ router.get('/all-Livreur', async (req, res) => {
     }
   
 });
-
-
-
-
-
 
 
 // Associate an action to a Livreur
@@ -136,9 +141,56 @@ router.put('/associateActionToLivreur/:livreurId/:actionId', async (req, res) =>
   }
 });
 
+// Route create entreprise 
+router.post('/create-entreprise', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
+    // Hash the password before saving it to the database
+    const hashedPassword = await bcrypt.hash(password, 10);
 
+    const newEntreprise = new Entreprise({
+      name,
+      email,
+      password: hashedPassword,
+      
+    });
 
+    const savedEntreprise = await newEntreprise.save();
+
+    res.status(201).json(savedEntreprise);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// routes to read the infos of E 
+router.get('/read-entreprise', async (req, res) => {
+  try {
+    const entreprises = await Entreprise.find();
+    res.status(200).json(entreprises);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// route to update the infos 
+router.put('/update/:id', async (req, res) => {
+  try {
+    const updatedEntreprise = await Entreprise.findOneAndUpdate(
+      {_id : req.params.id},
+      { ...req.body },
+      { new: true }
+    );
+
+    res.status(200).json(updatedEntreprise);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
 

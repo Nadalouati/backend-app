@@ -7,8 +7,10 @@ const UserSchema = require("../models/UserSchema");
 
 const mongoose = require("mongoose");
 const User = mongoose.model("Users",UserSchema)
-
+const EntrepriseSchema = require('../models/EntrepriseSchema');
+const Entreprise = mongoose.model('Entreprise', EntrepriseSchema);
 const Action = mongoose.model("Actions",ActionSchema)
+
 // Create an action by user(ma habtch tasti)
 router.post('/user/create-action', async (req, res) => {
    
@@ -30,7 +32,25 @@ router.post('/user/create-action', async (req, res) => {
         }   
 });
 
+// Create an action by Entreprise(ma habtch tasti)
+router.post('/entreprise/create-action', async (req, res) => {
+    
+    try {
+        console.log(req.body);
+        const action = new Action(req.body)
+        const savedAction = await action.save()
+        
+        await Entreprise.findOneAndUpdate(
+            { "_id": savedAction.entrepriseID } ,
+            {$push: { actions:  savedAction._id } }
+        )
+            
+        res.json(savedAction)
 
+    } catch (error) {
+        res.json({error : "500 server error"})
+    }   
+});
 // Get all actions(yest79ha l'admin)
 router.get('/all-actions', async (req, res) => {
     
