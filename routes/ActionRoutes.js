@@ -11,7 +11,7 @@ const EntrepriseSchema = require('../models/EntrepriseSchema');
 const Entreprise = mongoose.model('Entreprise', EntrepriseSchema);
 const Action = mongoose.model("Actions",ActionSchema)
 
-// Create an action by user(ma habtch tasti)
+// Create an action by user
 router.post('/user/create-action', async (req, res) => {
    
         try {
@@ -32,7 +32,7 @@ router.post('/user/create-action', async (req, res) => {
         }   
 });
 
-// Create an action by Entreprise(ma habtch tasti)
+// Create an action by Entreprise
 router.post('/entreprise/create-action', async (req, res) => {
     
     try {
@@ -51,7 +51,7 @@ router.post('/entreprise/create-action', async (req, res) => {
         res.json({error : "500 server error"})
     }   
 });
-// Get all actions(yest79ha l'admin)
+// Get all actions(for admin)
 router.get('/all-actions', async (req, res) => {
     
         try{
@@ -67,7 +67,7 @@ router.get('/all-actions', async (req, res) => {
       
 });
 
-// Get action by ID (badelna fiha )
+// Get action by ID
 router.get('/get-actions/:id', async (req, res) => {
     
           try {
@@ -82,7 +82,7 @@ router.get('/get-actions/:id', async (req, res) => {
               
 });
 
-// Update action(badelnaha )
+// Update action
 router.put('/update-action/:id', async (req, res) => {
   try {
       const { id } = req.params;
@@ -116,7 +116,7 @@ router.put('/update-action/:id', async (req, res) => {
 module.exports = router;
       
 
-// Delete action(badelnaha )
+// Delete action
 router.delete('/delete-action/:id', async (req, res) => {
   try {
       const { id } = req.params;
