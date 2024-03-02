@@ -89,5 +89,52 @@ router.put("/updateProfile/:livreurId", async (req, res) => {
   }
 });
 
+// Endpoint to mark an action as delivered (changing delivered to true and deliveredDate to the current Date)
+router.post("/markDelivered/:actionId", async (req, res) => {
+  try {
+    const { actionId } = req.params;
+
+    // Find the action by ID
+    const action = await Action.findById(actionId);
+
+    if (!action) {
+      return res.status(404).json({ error: "Action not found" });
+    }
+
+    // Update the action with delivered information
+    action.delivered = true;
+    action.deliveredDate = new Date();
+    action.state = "delivered";
+
+    // Save the updated action
+    await action.save();
+
+    // Find the livreur by ID and update its actions
+    const livreur = await Livreur.findById(action.associatedToLiv);
+    if (livreur) {
+      const updatedActions = livreur.actions.map((livreurAction) => {
+        if (livreurAction.equals(action._id)) {
+          return {
+            ...livreurAction,
+            delivered: true,
+            deliveredDate: action.deliveredDate,
+          };
+        }
+        return livreurAction;
+      });
+
+      // Update the livreur's actions
+      livreur.actions = updatedActions;
+      await livreur.save();
+    }
+
+    res.json({ message: "Action marked as delivered successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 module.exports = router;
 

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const Livreur = new mongoose.Schema({
     username: String,
     password: String,

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const Admin = new mongoose.Schema({
-    email: String,
+    username: String,
     password: String,
     nom: String,
     prenom: String,
@@ -10,8 +10,6 @@ const Admin = new mongoose.Schema({
         type: Array,
         default: []
     },
-  
-
 });
 
 module.exports = Admin;

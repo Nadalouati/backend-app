@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const dotenv = require("dotenv"); // Load environment variables from .env
+const dotenv = require("dotenv");
 
 const bcrypt = require("bcrypt");
 const Userr = require("../models/UserSchema");

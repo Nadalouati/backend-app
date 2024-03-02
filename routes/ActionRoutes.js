@@ -92,29 +92,22 @@ router.put('/update-action/:id', async (req, res) => {
           return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
       }
 
-      const docCreatedTimeString = action.create_time;
-      const docCreatedTime = new Date(docCreatedTimeString);
-      const currentTime  = Date.now();
-      const timeDifference = currentTime - docCreatedTime.getTime();
-      const twoHoursInMilliseconds = 2 * 60 * 60 * 1000;
+      
   
-      if (timeDifference < twoHoursInMilliseconds) {
+      if (action.confirmed_time) {
 
           const updatedAction = await Action.findByIdAndUpdate(id, req.body, { new: true });
           res.status(200).json(updatedAction);
 
       } else {
           
-          res.status(400).json({ message: 'Cannot update action after 2 hours of creation.' });
+          res.status(400).json({ message: 'Cannot update action after confirmation' });
       }
 
   } catch (error) {
       res.status(500).json({ message: error.message });
   }
 });
-
-module.exports = router;
-      
 
 // Delete action
 router.delete('/delete-action/:id', async (req, res) => {
@@ -126,20 +119,13 @@ router.delete('/delete-action/:id', async (req, res) => {
           return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
       }
 
-      const create_time = action.create_time; 
-
-      const Now_time = new Date();
-      const timeDifference = Now_time - create_time; 
-
-        //const twoHours = 2 * 60 * 60 * 1000 ; 
-        //timeDifference <= twoHours
-      if (true) {
+      if (action.confirmed_time) {
           
           const deletedAction = await Action.findByIdAndDelete(id);
           res.status(200).json(deletedAction);
       } else {
           
-          res.status(403).json({ message: 'Cannot delete action after 2 hours of creation.' });
+          res.status(403).json({ message: 'Cannot delete action after confirmation' });
       }
   } catch (error) {
       res.status(500).json({ message: error.message });
