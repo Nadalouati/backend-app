@@ -12,6 +12,25 @@ const User = mongoose.model("Users", UserSchema);
 const Admin = mongoose.model("Admin", AdminSchema);
 const Action = mongoose.model("Action", ActionSchema);
 
+function verifyToken(req, res, next) {
+  // Get token from headers
+  const {token} = req.body;
+
+  // Check if token is present
+  if (!token) {
+      return res.status(403).json({ message: 'No token provided' });
+  }
+
+  // Verify token
+  jwt.verify(token, "Secret-key", (err, decoded) => {
+      if (err) {
+          return res.status(401).json({ message: 'Failed to authenticate token' });
+      }
+      // If token is valid, save decoded token in request for further use
+      req.decoded = decoded;
+      next();
+  });
+}
 
 // Signup endpoint
 router.post("/signup", async (req, res) => {
@@ -39,11 +58,10 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 // Login endpoint
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-
+  
   try {
     // Find the user in the database
     const user = await User.findOne({ username });
@@ -62,15 +80,27 @@ router.post("/login", async (req, res) => {
       expiresIn: "8554h",
     });
 
-    res.status(200).json({ message: "Login successful", token });
+    res.status(200).json({ message: "Login successful", token , userId: user._id , username });
+  } catch (error) {
+    
+    res.status(500).json({ message: error });
+  }
+});
+
+// Get Notif If User Auth Jwt
+router.post("/get-notifs", verifyToken , async (req, res) => {
+  const {userId} = req.decoded;
+
+  try {
+    const u = await User.findOne({ _id : userId });
+    res.json(u?.notifications);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // User update himself
-
 router.put("/update-user/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,6 +122,26 @@ router.put("/update-user/:id", async (req, res) => {
     }
 
     res.status(200).json({ ...user, ...restOfUpdates });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// User update notif
+router.put("/update-user-notif/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data } = req.body;
+
+    const user = await User.findByIdAndUpdate(id, {notifications : data});
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: `Cannot find any user with ID ${id}` });
+    }
+
+    res.status(200).json({ ...user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -152,7 +202,6 @@ router.put("/update-rating/:id", async (req, res) => {
   }
 });
 
-
 // Confirm or Decline the admin's price and date
 router.put("/confirmOrDeclineAction/:actionId", async (req, res) => {
   try {
@@ -187,6 +236,8 @@ router.put("/confirmOrDeclineAction/:actionId", async (req, res) => {
             actionId,
             confirmation,
             actioState: action.state,
+            notifType : "userResponse",
+            seen : false
           },
         },
       },
@@ -198,5 +249,6 @@ router.put("/confirmOrDeclineAction/:actionId", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 module.exports = router;

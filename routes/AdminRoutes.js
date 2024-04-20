@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const dotenv = require("dotenv");
-
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Userr = require("../models/UserSchema");
 const Actionn = require("../models/ActionSchema");
@@ -18,6 +18,26 @@ const Entreprise = mongoose.model("Entreprise", E);
 const Admin = mongoose.model("Admin", AdminSchema);
 
 dotenv.config();
+// Middleware function to verify JWT token
+function verifyToken(req, res, next) {
+  // Get token from headers
+  const {token} = req.body;
+
+  // Check if token is present
+  if (!token) {
+      return res.status(403).json({ message: 'No token provided' });
+  }
+
+  // Verify token
+  jwt.verify(token, "Secret-key", (err, decoded) => {
+      if (err) {
+          return res.status(401).json({ message: 'Failed to authenticate token' });
+      }
+      // If token is valid, save decoded token in request for further use
+      req.decoded = decoded;
+      next();
+  });
+}
 
 // Admin login
 router.post("/login", async (req, res) => {
@@ -34,7 +54,12 @@ router.post("/login", async (req, res) => {
 
     if (password == admin.password) {
       // Passwords match, login successful
-      res.status(200).json({ message: "Admin login successful" });
+      // Generate a JWT token for authentication
+      const token = jwt.sign({ AdminId: admin._id }, "Secret-key", {
+        expiresIn: "8554h",
+      });
+
+      res.status(200).json({ message: "Admin login successful" , login : true , token : token});
     } else {
       // Passwords don't match
       res.status(401).json({ message: "Unauthorized" });
@@ -42,6 +67,66 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.post("/get-all-livs" , verifyToken , async (req,res)=>{
+  try {
+    const livs = await Livreur.find();
+    res.json(livs)
+  } catch (error) {
+    res.status(400).json(error)
+  }
+})
+// Route to search for Livreur by name
+router.post('/search-livreurs',verifyToken, async (req, res) => {
+  try {
+    const { nom } = req.query;
+    let livreurs;
+
+    // If nom is provided, search for Livreurs with matching or starting name
+    if (nom) {
+      livreurs = await Livreur.find({ nom: { $regex: new RegExp('^' + nom, 'i') } });
+    } else {
+      // If nom is not provided, return all Livreurs
+      livreurs = await Livreur.find();
+    }
+
+    res.json(livreurs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+// Get Notif If Admin Auth Jwt
+router.post("/get-notifs", verifyToken , async (req, res) => {
+  const {AdminId} = req.decoded;
+
+  try {
+    const admin = await Admin.findOne({ _id : AdminId });
+    res.json(admin?.notifications);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+router.put("/update-admin-notif", verifyToken , async (req, res) => {
+  try {
+    const {AdminId} = req.decoded;
+    const { data } = req.body;
+
+    const a = await Admin.findByIdAndUpdate(AdminId, {notifications : data});
+
+    if (!a) {
+      return res
+        .status(404)
+        .json({ message: `Cannot find any user with ID ${AdminId}` });
+    }
+
+    res.status(200).json({ ...a });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -67,7 +152,7 @@ router.post("/createLivreurProfile", async (req, res) => {
 //Admin response
 router.post("/adminResponse", async (req, res) => {
   try {
-    const { actionId, currentPriceByAdmin, dateByAdmin } = req.body;
+    const { actionId, currentPriceByAdmin, dateByAdmin , messageByAdmin} = req.body;
 
     // Find the action by ID
     const action = await Action.findById(actionId);
@@ -83,6 +168,7 @@ router.post("/adminResponse", async (req, res) => {
       currentPriceByAdmin,
       dateByAdmin,
       responded_time: new Date().toISOString(),
+      messageByAdmin,
       state: "responded",
     });
 
@@ -93,7 +179,8 @@ router.post("/adminResponse", async (req, res) => {
           notifications: {
             actionId: action._id,
             message: "An admin replied to your action",
-            repliedDate: action.responded_time,
+            repliedDate: new Date().toISOString(),
+            seen : false,
           },
         },
       },
@@ -125,7 +212,7 @@ router.get("/all-Livreur", async (req, res) => {
 });
 
 // Associate an action to a Livreur
-router.put(
+router.post(
   "/associateActionToLivreur/:livreurId/:actionId",
   async (req, res) => {
     try {
@@ -195,7 +282,7 @@ router.get("/read-entreprise", async (req, res) => {
 });
 
 // route to update the infos
-router.put("/update/:id", async (req, res) => {
+router.put("/update-entreprise/:id", async (req, res) => {
   try {
     const updatedEntreprise = await Entreprise.findOneAndUpdate(
       { _id: req.params.id },

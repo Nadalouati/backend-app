@@ -8,6 +8,7 @@ const UserSchema = require("../models/UserSchema");
 const mongoose = require("mongoose");
 const User = mongoose.model("Users",UserSchema)
 const EntrepriseSchema = require('../models/EntrepriseSchema');
+const Admin = mongoose.model("Admins",require('../models/AdminSchema')) ;
 const Entreprise = mongoose.model('Entreprise', EntrepriseSchema);
 const Action = mongoose.model("Actions",ActionSchema)
 
@@ -67,7 +68,7 @@ router.get('/all-actions', async (req, res) => {
       
 });
 
-// Get action by ID
+// Get actions by userID
 router.get('/get-actions/:id', async (req, res) => {
     
           try {
@@ -82,6 +83,35 @@ router.get('/get-actions/:id', async (req, res) => {
               
 });
 
+// Get action by ID
+router.get('/get-action/:id', async (req, res) => {
+    
+    try {
+      const {id} = req.params;
+
+      const action = await Action.find({ _id : id });
+
+          res.status(200).json(action);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+        
+});
+
+// Get pending by ID
+router.get('/pending', async (req, res) => {
+    
+    try {
+
+      const pendingActions = await Action.find({ state : "pending" });
+
+          res.status(200).json(pendingActions);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+        
+});
+
 // Update action
 router.put('/update-action/:id', async (req, res) => {
   try {
@@ -92,9 +122,8 @@ router.put('/update-action/:id', async (req, res) => {
           return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
       }
 
-      
   
-      if (action.confirmed_time) {
+      if (!action.confirmed_time) {
 
           const updatedAction = await Action.findByIdAndUpdate(id, req.body, { new: true });
           res.status(200).json(updatedAction);
@@ -109,6 +138,36 @@ router.put('/update-action/:id', async (req, res) => {
   }
 });
 
+router.put('/update-conf/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const action = await Action.findById(id);
+  
+        if (!action) {
+            return res.status(404).json({ message: `Cannot find any action with ID ${id}` });
+        }
+  
+    
+        
+  
+            const updatedAction = await Action.findByIdAndUpdate(id, req.body, { new: true });
+            const acctype = updatedAction?.type === "livraison" ? "userResponseLiv" : "userResponseDem"
+            await Admin.findOneAndUpdate({},{ $push: { notifications: {
+                actionId : updatedAction._id,
+                repliedDate : new Date().toDateString(),
+                message : req.body?.confirmed_time ? 'Client Confirmed' : "Client Declined",
+                notifType : acctype,
+                seen : false
+            } } },{new : true});
+            
+            res.status(200).json(updatedAction);
+  
+        
+  
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+  });
 // Delete action
 router.delete('/delete-action/:id', async (req, res) => {
   try {

@@ -10,6 +10,7 @@ const ActionSchema = require("../models/ActionSchema");
 const Action = mongoose.model("Action", ActionSchema);
 const Livreur = mongoose.model("Livreur", LivreurSchema);
 
+
 // Login endpoint
 router.post("/login", async (req, res) => {
   try {
@@ -31,7 +32,7 @@ router.post("/login", async (req, res) => {
       expiresIn: "8554h",
     });
 
-    res.status(200).json({ message: "Login successful", token });
+    res.status(200).json({ message: "Login successful", token , livreurId : livreur._id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -45,14 +46,13 @@ router.get("/checkActions/:livreurId", async (req, res) => {
 
     // Fetch the Livreur by ID
     const livreur = await Livreur.findById(livreurId);
-
+    
     if (!livreur) {
       return res.status(404).json({ message: "Livreur not found" });
     }
 
     // Check if the Livreur has any actions
-    const hasActions = Action.find({ associatedToLiv: livreurId });
-
+    const hasActions = await Action.find({ associatedToLiv: livreurId });
     res.status(200).json({ hasActions });
   } catch (error) {
     console.error(error);
@@ -135,6 +135,51 @@ router.post("/markDelivered/:actionId", async (req, res) => {
   }
 });
 
+router.post("/markCancled/:actionId", async (req, res) => {
+  try {
+    const { actionId } = req.params;
+
+    // Find the action by ID
+    const action = await Action.findById(actionId);
+
+    if (!action) {
+      return res.status(404).json({ error: "Action not found" });
+    }
+
+    // Update the action with delivered information
+    action.delivered = false;
+    action.cancledDate = new Date();
+    action.state = "cancled";
+    action.cancledReason = req.body.cancledReason
+    console.log(req.body.cancledReason);
+    // Save the updated action
+    await action.save();
+
+    // Find the livreur by ID and update its actions
+    const livreur = await Livreur.findById(action.associatedToLiv);
+    if (livreur) {
+      const updatedActions = livreur.actions.map((livreurAction) => {
+        if (livreurAction.equals(action._id)) {
+          return {
+            ...livreurAction,
+            delivered: false,
+            cancledDate: action.cancledDate,
+          };
+        }
+        return livreurAction;
+      });
+
+      // Update the livreur's actions
+      livreur.actions = updatedActions;
+      await livreur.save();
+    }
+
+    res.json({ message: "Action marked as cancled successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 module.exports = router;
 
