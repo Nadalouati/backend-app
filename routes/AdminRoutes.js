@@ -104,7 +104,7 @@ router.post("/get-notifs", verifyToken , async (req, res) => {
 
   try {
     const admin = await Admin.findOne({ _id : AdminId });
-    res.json(admin?.notifications);
+    res.json(admin?.notifications?.reverse());
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -178,7 +178,7 @@ router.post("/adminResponse", async (req, res) => {
         $push: {
           notifications: {
             actionId: action._id,
-            message: "An admin replied to your action",
+            message: "Un administrateur a répondu à votre action",
             repliedDate: new Date().toISOString(),
             seen : false,
           },
@@ -227,7 +227,7 @@ router.post(
         return res.status(404).json({ message: "Livreur or Action not found" });
       }
 
-      if (!action?.confirmed_time) {
+      if (!action?.confirmed_time && action?.creatorRole === "user") {
         return res.status(404).json({ message: "Action Not Confirmed Yet" });
       }
 

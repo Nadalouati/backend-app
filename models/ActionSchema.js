@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const ActionSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     userName : {type :String},
+    entrepriseName : {type :String},
     entrepriseID:{ type: mongoose.Schema.Types.ObjectId, ref: 'Entreprise' },
     associatedToLiv: { type: mongoose.Schema.Types.ObjectId, ref: 'Livreur' },
     type: { type: String, enum: ['demenagement', 'livraison'] }, 

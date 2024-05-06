@@ -64,7 +64,7 @@ router.get("/checkActions/:livreurId", async (req, res) => {
 router.put("/updateProfile/:livreurId", async (req, res) => {
   try {
     const livreurId = req.params.livreurId;
-    const { nom, prenom, numTelephone, email } = req.body;
+    const { username,password,nom, prenom, numTelephone, email } = req.body;
 
     // Fetch the Livreur by ID
     const livreur = await Livreur.findById(livreurId);
@@ -78,7 +78,8 @@ router.put("/updateProfile/:livreurId", async (req, res) => {
     livreur.prenom = prenom || livreur.prenom;
     livreur.numTelephone = numTelephone || livreur.numTelephone;
     livreur.email = email || livreur.email;
-
+    livreur.username = username || livreur.username;
+    livreur.password = password || livreur.password;
     // Save the updated Livreur
     await livreur.save();
 

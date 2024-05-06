@@ -52,6 +52,7 @@ router.post('/entreprise/create-action', async (req, res) => {
         res.json({error : "500 server error"})
     }   
 });
+
 // Get all actions(for admin)
 router.get('/all-actions', async (req, res) => {
     
@@ -83,6 +84,20 @@ router.get('/get-actions/:id', async (req, res) => {
               
 });
 
+// Get actions by userID
+router.get('/get-actions/entreprise/:id', async (req, res) => {
+    
+    try {
+      const {id} = req.params;
+
+      const actionsByUserId = await Action.find({ entrepriseID : id });
+
+          res.status(200).json(actionsByUserId);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+        
+});
 // Get action by ID
 router.get('/get-action/:id', async (req, res) => {
     
@@ -138,6 +153,7 @@ router.put('/update-action/:id', async (req, res) => {
   }
 });
 
+
 router.put('/update-conf/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -155,7 +171,7 @@ router.put('/update-conf/:id', async (req, res) => {
             await Admin.findOneAndUpdate({},{ $push: { notifications: {
                 actionId : updatedAction._id,
                 repliedDate : new Date().toDateString(),
-                message : req.body?.confirmed_time ? 'Client Confirmed' : "Client Declined",
+                message : req.body?.confirmed_time ? "Le client a confirmé la demande" : "Le client a refusé",
                 notifType : acctype,
                 seen : false
             } } },{new : true});
@@ -167,7 +183,8 @@ router.put('/update-conf/:id', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-  });
+});
+
 // Delete action
 router.delete('/delete-action/:id', async (req, res) => {
   try {
