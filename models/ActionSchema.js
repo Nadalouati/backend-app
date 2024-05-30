@@ -22,11 +22,12 @@ const ActionSchema = new mongoose.Schema({
     deliveredDate : {type : Date},
 
     cancledDate : {typ : Date},
-    cancledReason : {type : String },
+    cancledReason : {type : String , default : ""},
 
     taille: { type: String },
     poids: { type: String },
     nature: { type: String },
+    category:{type: String},
     lieuDepart: { type: String },
     lieuArriver: { type: String },
     dateLivraison: { type: Date },

@@ -84,4 +84,28 @@ router.put("/update-entreprise-notif/:id", async (req, res) => {
   }
 });
 
+// Route to get Entreprise profile by ID
+router.get("/get-entreprise-profile/:id", async (req, res) => {
+  try {
+    // Get the ID from the route parameters
+    const { id } = req.params;
+
+    // Fetch the Entreprise by ID
+    const entreprise = await Entreprise.findById(id);
+
+    // If the Entreprise does not exist, return a 404 Not Found status
+    if (!entreprise) {
+      return res.status(404).json({ message: `Cannot find any entreprise with ID ${id}` });
+    }
+
+    // If the Entreprise exists, return it in the response
+    res.status(200).json(entreprise);
+  } catch (error) {
+    // For other errors, return a 500 Internal Server Error
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 module.exports = router;

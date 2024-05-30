@@ -42,10 +42,10 @@ function verifyToken(req, res, next) {
 // Admin login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
+  
   try {
-    const admin = await Admin.findOne({ email });
-
+    const admin = await Admin.findOne({ email : email});
+    
     if (!admin) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -59,7 +59,7 @@ router.post("/login", async (req, res) => {
         expiresIn: "8554h",
       });
 
-      res.status(200).json({ message: "Admin login successful" , login : true , token : token});
+      res.status(200).json({ message: "Admin login successful" , login : true , token : token , _id : admin._id});
     } else {
       // Passwords don't match
       res.status(401).json({ message: "Unauthorized" });
@@ -297,4 +297,148 @@ router.put("/update-entreprise/:id", async (req, res) => {
   }
 });
 
+
+router.get("/get-stats" , async (req, res) => {
+    try {
+
+      // here we are getting the income from all actions
+      const totalPrice = await Action.aggregate([
+        {
+            $match: {
+                confirmed_time: { $ne: null } // Filtering actions where confirmed_time is not null
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$currentPriceByAdmin" } // Summing up currentPriceByAdmin field
+            }
+        }
+    ]);
+
+    // here we are getting the best 3 users
+    const topUsers = await User.aggregate([
+        { $unwind: "$actions" }, // Unwind the actions array
+        {
+            $group: {
+                _id: "$_id",
+                numActions: { $sum: 1 } // Count the number of actions for each user
+            }
+        },
+        { $sort: { numActions: -1 } }, // Sort in descending order by number of actions
+        { $limit: 5 } // Limit to the first 5 users
+    ]);
+
+    // Retrieve user details for the top users
+    const userIds = topUsers.map(user => user._id);
+    const topUsersDetails = await User.find({ _id: { $in: userIds } });
+
+    // Sort the top users based on the number of actions
+    const sortedTopUsers = topUsersDetails.sort((a, b) => {
+        const numActionsA = topUsers.find(user => user._id.equals(a._id)).numActions;
+        const numActionsB = topUsers.find(user => user._id.equals(b._id)).numActions;
+        return numActionsB - numActionsA;
+    });
+
+    // how many cancled in each reason
+    const canceledActions = await Action.aggregate([
+        { $match: { cancledReason: { $exists: true, $ne: ""  } } }, // Filter actions with cancledReason
+        {
+            $group: {
+                _id: "$cancledReason", // Group by cancel reason
+                count: { $sum: 1 } // Count the occurrences of each cancel reason
+            }
+        }
+    ]);
+    
+    const allStats = {
+      totalInCome : totalPrice[0].total || 0 ,
+      topUsers : sortedTopUsers ,
+      reason : canceledActions
+    };
+
+    res.status(200).json({allStats});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/mostActiveLivreur", async (req, res) => {
+  try {
+    const mostActiveLivreur = await Action.aggregate([
+      { $match: { state: "delivered" } }, // Filter actions with state "delivered"
+      {
+        $group: {
+          _id: "$associatedToLiv", // Group by delivery person ID
+          totalDeliveredActions: { $sum: 1 } // Count the number of delivered actions for each delivery person
+        }
+      },
+      { $sort: { totalDeliveredActions: -1 } }, // Sort in descending order by the count of delivered actions
+      { $limit: 1 } // Limit to the first result
+    ]);
+
+    // If there are no delivered actions or no livreur found
+    if (mostActiveLivreur.length === 0) {
+      return res.status(404).json({ error: "No delivered actions found" });
+    }
+
+    // Retrieve the livreur details
+    const livreurDetails = await Livreur.findById(mostActiveLivreur[0]._id);
+
+    res.json({
+      livreur: livreurDetails,
+      totalDeliveredActions: mostActiveLivreur[0].totalDeliveredActions
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.put("/updateProfile/:adminId", async (req, res) => {
+  try {
+    const adminId = req.params.adminId;
+    const { password, email } = req.body;
+
+    // Fetch the Livreur by ID
+    const admin = await Admin.findById(adminId);
+
+    if (!admin) {
+      return res.status(404).json({ message: "admin not found" });
+    }
+
+    
+    admin.email = email || admin.email;
+    
+    admin.password = password || admin.password;
+    // Save the updated Livreur
+    await admin.save();
+
+    res.status(200).json({ message: "Profile updated successfully", admin });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+// Route to get admin profile by ID
+router.get("/getProfile/:adminId", async (req, res) => {
+  try {
+    // Get the ID from the route parameters
+    const adminId = req.params.adminId;
+
+    // Fetch the Livreur by ID
+    const admin = await Admin.findById(adminId);
+
+    // If the Livreur does not exist, return a 404 Not Found
+    if (!admin) {
+      return res.status(404).json({ message: "admin not found" });
+    }
+
+    // If the Livreur exists, return it in the response
+    res.status(200).json(admin);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 module.exports = router;

@@ -181,6 +181,27 @@ router.post("/markCancled/:actionId", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+// Route to get Livreur profile by ID
+router.get("/getProfile/:livreurId", async (req, res) => {
+  try {
+    // Get the ID from the route parameters
+    const livreurId = req.params.livreurId;
+
+    // Fetch the Livreur by ID
+    const livreur = await Livreur.findById(livreurId);
+
+    // If the Livreur does not exist, return a 404 Not Found
+    if (!livreur) {
+      return res.status(404).json({ message: "Livreur not found" });
+    }
+
+    // If the Livreur exists, return it in the response
+    res.status(200).json(livreur);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 module.exports = router;
 

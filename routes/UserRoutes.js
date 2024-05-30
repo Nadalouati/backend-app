@@ -166,6 +166,26 @@ router.get("/get-rating/:id", async (req, res) => {
   }
 });
 
+router.get('/average-rating', async (req, res) => {
+  try {
+    const result = await User.aggregate([
+      {
+        $group: {
+          _id: null, // We don't need to group by any field
+          averageRating: { $avg: '$ratingStars' }
+        }
+      }
+    ]);
+
+    const averageRating = result.length > 0 ? result[0].averageRating : 0;
+
+    res.json({ averageRating });
+  } catch (error) {
+    console.error('Error calculating average rating:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // Endpoint to update ratingStars
 router.put("/update-rating/:id", async (req, res) => {
   try {
@@ -249,6 +269,26 @@ router.put("/confirmOrDeclineAction/:actionId", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+// Route to get User profile by ID
+router.get("/get-user-profile/:id", async (req, res) => {
+  try {
+    // Extract the user ID from the route parameters
+    const { id } = req.params;
 
+    // Fetch the User from the database using the ID
+    const user = await User.findById(id);
+
+    // If the User doesn't exist, return a 404 Not Found status
+    if (!user) {
+      return res.status(404).json({ message: `Cannot find any user with ID ${id}` });
+    }
+
+    // Return the User's details in the response
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 module.exports = router;
