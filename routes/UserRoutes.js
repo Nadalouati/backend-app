@@ -178,7 +178,7 @@ router.get('/average-rating', async (req, res) => {
     ]);
 
     const averageRating = result.length > 0 ? result[0].averageRating : 0;
-
+    console.log(result);
     res.json({ averageRating });
   } catch (error) {
     console.error('Error calculating average rating:', error);
